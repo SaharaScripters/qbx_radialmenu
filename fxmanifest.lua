@@ -6,10 +6,16 @@ version '1.0.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
+    '@qbx_core/import.lua',
     '@qb-core/shared/locale.lua',
     'locales/en.lua',
     'locales/*.lua',
     'config.lua'
+}
+
+modules {
+    'qbx_core:playerdata',
+    'qbx_core:utils'
 }
 
 client_scripts {
