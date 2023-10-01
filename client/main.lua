@@ -55,7 +55,7 @@ local function AddVehicleSeats()
                                 if cache.vehicle then
                                     TriggerEvent('radialmenu:client:ChangeSeat', i, seatTable[i] or Lang:t("options.other_seats"))
                                 else
-                                    exports.qbx_core:Notify(Lang:t('error.not_in_vehicle'), 'error')
+                                    lib.notify({ type = 'error', description = Lang:t('error.not_in_vehicle') })
                                 end
                                 lib.hideRadial()
                             end,
@@ -170,21 +170,21 @@ RegisterNetEvent('radialmenu:client:ChangeSeat', function(id, label)
     local speed = GetEntitySpeed(Veh)
     local HasHarness = exports['qbx_smallresources']:HasHarness()
     if HasHarness then
-        return exports.qbx_core:Notify(Lang:t("error.race_harness_on"), 'error')
+        lib.notify({ type = 'error', description = Lang:t("error.race_harness_on") })
     end
 
     if not IsSeatFree then
-        return exports.qbx_core:Notify(Lang:t("error.seat_occupied"), 'error')
+        lib.notify({ type = 'error', description = Lang:t("error.seat_occupied") })
     end
 
     local kmh = speed * 3.6
 
     if kmh > 100.0 then
-        return exports.qbx_core:Notify(Lang:t("error.vehicle_driving_fast"), 'error')
+        lib.notify({ type = 'error', description = Lang:t("error.vehicle_driving_fast") })
     end
 
     SetPedIntoVehicle(cache.ped, Veh, id - 2)
-    exports.qbx_core:Notify(Lang:t("info.switched_seats", {seat = label}))
+    lib.notify({ type = 'inform', description = Lang:t("info.switched_seats", {seat = label}) })
 end)
 
 RegisterNetEvent('qb-radialmenu:trunk:client:Door', function(plate, door, open)
@@ -202,7 +202,7 @@ RegisterNetEvent('qb-radialmenu:trunk:client:Door', function(plate, door, open)
 end)
 
 RegisterNetEvent('qb-radialmenu:client:noPlayers', function()
-    exports.qbx_core:Notify(Lang:t("error.no_people_nearby"), 'error', 2500)
+    lib.notify({ type = 'error', description = Lang:t("error.no_people_nearby"), duration = 2500 })
 end)
 
 RegisterNetEvent('qb-radialmenu:client:openDoor', function(id)
@@ -232,7 +232,7 @@ RegisterNetEvent('qb-radialmenu:client:openDoor', function(id)
             end
         end
     else
-        exports.qbx_core:Notify(Lang:t("error.no_vehicle_found"), 'error', 2500)
+        lib.notify({ type = 'error', description = Lang:t("error.no_vehicle_found"), duration = 2500 })
     end
 end)
 
@@ -245,16 +245,16 @@ RegisterNetEvent('radialmenu:client:setExtra', function(id)
             if DoesExtraExist(veh, extra) then
                 if IsVehicleExtraTurnedOn(veh, extra) then
                     SetVehicleExtra(veh, extra, true)
-                    exports.qbx_core:Notify(Lang:t("error.extra_deactivated", {extra = extra}), 'error', 2500)
+                    lib.notify({ type = 'error', description = Lang:t("error.extra_deactivated", {extra = extra}), duration = 2500 })
                 else
                     SetVehicleExtra(veh, extra, false)
-                    exports.qbx_core:Notify(Lang:t("success.extra_activated", {extra = extra}), 'success', 2500)
+                    lib.notify({ type = 'success', description = Lang:t("success.extra_activated", {extra = extra}), duration = 2500 })
                 end
             else
-                exports.qbx_core:Notify(Lang:t("error.extra_not_present", {extra = extra}), 'error', 2500)
+                lib.notify({ type = 'error', description = Lang:t("error.extra_not_present", {extra = extra}), duration = 2500 })
             end
         else
-            exports.qbx_core:Notify(Lang:t("error.not_driver"), 'error', 2500)
+            lib.notify({ type = 'error', description = Lang:t("error.not_driver"), duration = 2500 })
         end
     end
 end)
