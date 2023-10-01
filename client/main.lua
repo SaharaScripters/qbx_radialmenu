@@ -1,5 +1,4 @@
-QBCore = exports['qbx-core']:GetCoreObject()
-PlayerData = QBCore.Functions.GetPlayerData()
+PlayerData = GetPlayerData()
 
 -- Functions
 
@@ -38,7 +37,7 @@ local function AddVehicleSeats()
         while true do
             Wait(50)
             if IsControlJustPressed(0, 23) and not cache.vehicle then
-                local vehicle = QBCore.Functions.GetClosestVehicle(GetEntityCoords(cache.ped))
+                local vehicle = exports.qbx_core:GetClosestVehicle(GetEntityCoords(cache.ped))
                 if vehicle then
                     local vehicleseats = {}
                     local seatTable = {
@@ -58,7 +57,7 @@ local function AddVehicleSeats()
                                 if cache.vehicle then
                                     TriggerEvent('radialmenu:client:ChangeSeat', i, seatTable[i] or Lang:t("options.other_seats"))
                                 else
-                                    QBCore.Functions.Notify(Lang:t('error.not_in_vehicle'), 'error')
+                                    lib.notify({ type = 'error', description = Lang:t('error.not_in_vehicle') })
                                 end
                                 lib.hideRadial()
                             end,
@@ -173,28 +172,28 @@ RegisterNetEvent('radialmenu:client:ChangeSeat', function(id, label)
     local speed = GetEntitySpeed(Veh)
     local HasHarness = exports['qbx-smallresources']:HasHarness()
     if HasHarness then
-        return QBCore.Functions.Notify(Lang:t("error.race_harness_on"), 'error')
+        lib.notify({ type = 'error', description = Lang:t("error.race_harness_on") })
     end
 
     if not IsSeatFree then
-        return QBCore.Functions.Notify(Lang:t("error.seat_occupied"), 'error')
+        lib.notify({ type = 'error', description = Lang:t("error.seat_occupied") })
     end
 
     local kmh = speed * 3.6
 
     if kmh > 100.0 then
-        return QBCore.Functions.Notify(Lang:t("error.vehicle_driving_fast"), 'error')
+        lib.notify({ type = 'error', description = Lang:t("error.vehicle_driving_fast") })
     end
 
     SetPedIntoVehicle(cache.ped, Veh, id - 2)
-    QBCore.Functions.Notify(Lang:t("info.switched_seats", {seat = label}))
+    lib.notify({ type = 'inform', description = Lang:t("info.switched_seats", {seat = label}) })
 end)
 
 RegisterNetEvent('qb-radialmenu:trunk:client:Door', function(plate, door, open)
     local veh = cache.vehicle
     if not veh then return end
 
-    local pl = QBCore.Functions.GetPlate(veh)
+    local pl = GetPlate(veh)
     if pl ~= plate then return end
 
     if open then
@@ -205,15 +204,15 @@ RegisterNetEvent('qb-radialmenu:trunk:client:Door', function(plate, door, open)
 end)
 
 RegisterNetEvent('qb-radialmenu:client:noPlayers', function()
-    QBCore.Functions.Notify(Lang:t("error.no_people_nearby"), 'error', 2500)
+    lib.notify({ type = 'error', description = Lang:t("error.no_people_nearby"), duration = 2500 })
 end)
 
 RegisterNetEvent('qb-radialmenu:client:openDoor', function(id)
     local door = id
-    local closestVehicle = cache.vehicle or QBCore.Functions.GetClosestVehicle(GetEntityCoords(cache.ped))
+    local closestVehicle = cache.vehicle or exports.qbx_core:GetClosestVehicle(GetEntityCoords(cache.ped))
     if closestVehicle ~= 0 then
         if closestVehicle ~= cache.vehicle then
-            local plate = QBCore.Functions.GetPlate(closestVehicle)
+            local plate = GetPlate(closestVehicle)
             if GetVehicleDoorAngleRatio(closestVehicle, door) > 0.0 then
                 if not IsVehicleSeatFree(closestVehicle, -1) then
                     TriggerServerEvent('qb-radialmenu:trunk:server:Door', false, plate, door)
@@ -235,7 +234,7 @@ RegisterNetEvent('qb-radialmenu:client:openDoor', function(id)
             end
         end
     else
-        QBCore.Functions.Notify(Lang:t("error.no_vehicle_found"), 'error', 2500)
+        lib.notify({ type = 'error', description = Lang:t("error.no_vehicle_found"), duration = 2500 })
     end
 end)
 
@@ -248,16 +247,16 @@ RegisterNetEvent('radialmenu:client:setExtra', function(id)
             if DoesExtraExist(veh, extra) then
                 if IsVehicleExtraTurnedOn(veh, extra) then
                     SetVehicleExtra(veh, extra, true)
-                    QBCore.Functions.Notify(Lang:t("error.extra_deactivated", {extra = extra}), 'error', 2500)
+                    lib.notify({ type = 'error', description = Lang:t("error.extra_deactivated", {extra = extra}), duration = 2500 })
                 else
                     SetVehicleExtra(veh, extra, false)
-                    QBCore.Functions.Notify(Lang:t("success.extra_activated", {extra = extra}), 'success', 2500)
+                    lib.notify({ type = 'success', description = Lang:t("success.extra_activated", {extra = extra}), duration = 2500 })
                 end
             else
-                QBCore.Functions.Notify(Lang:t("error.extra_not_present", {extra = extra}), 'error', 2500)
+                lib.notify({ type = 'error', description = Lang:t("error.extra_not_present", {extra = extra}), duration = 2500 })
             end
         else
-            QBCore.Functions.Notify(Lang:t("error.not_driver"), 'error', 2500)
+            lib.notify({ type = 'error', description = Lang:t("error.not_driver"), duration = 2500 })
         end
     end
 end)
@@ -265,19 +264,19 @@ end)
 RegisterNetEvent('radialmenu:flipVehicle', function()
     if cache.vehicle then return end
     TriggerEvent('animations:client:EmoteCommandStart', {"mechanic"})
-    QBCore.Functions.Progressbar("flipping_car", Lang:t("progress.flipping_car"), Config.Fliptime, false, true, {
+    exports.qbx_core:Progressbar("flipping_car", Lang:t("progress.flipping_car"), Config.Fliptime, false, true, {
         disableMovement = true,
         disableCarMovement = true,
         disableMouse = false,
         disableCombat = true,
     }, {}, {}, {}, function() -- Done
-        local vehicle, distance = QBCore.Functions.GetClosestVehicle(GetEntityCoords(cache.ped))
+        local vehicle, distance = exports.qbx_core:GetClosestVehicle(GetEntityCoords(cache.ped))
         if distance <= 15 then
             SetVehicleOnGroundProperly(vehicle)
         end
         TriggerEvent('animations:client:EmoteCommandStart', {"c"})
     end, function() -- Cancel
-        QBCore.Functions.Notify(Lang:t("error.cancel_task"), "error")
+        lib.notify({ type = 'error', description = Lang:t("error.cancel_task") })
         TriggerEvent('animations:client:EmoteCommandStart', {"c"})
     end)
 end)
@@ -296,7 +295,7 @@ end)
 
 -- Sets the metadata when the player spawns
 AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
-    PlayerData = QBCore.Functions.GetPlayerData()
+    PlayerData = GetPlayerData()
     SetupRadialMenu()
 end)
 
