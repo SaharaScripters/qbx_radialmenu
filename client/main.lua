@@ -1,4 +1,4 @@
-PlayerData = GetPlayerData()
+PlayerData = QBX.PlayerData
 
 -- Functions
 
@@ -37,7 +37,7 @@ local function AddVehicleSeats()
         while true do
             Wait(50)
             if IsControlJustPressed(0, 23) and not cache.vehicle then
-                local vehicle = exports.qbx_core:GetClosestVehicle(GetEntityCoords(cache.ped))
+                local vehicle = GetClosestVehicle(GetEntityCoords(cache.ped))
                 if vehicle then
                     local vehicleseats = {}
                     local seatTable = {
@@ -209,7 +209,7 @@ end)
 
 RegisterNetEvent('qb-radialmenu:client:openDoor', function(id)
     local door = id
-    local closestVehicle = cache.vehicle or exports.qbx_core:GetClosestVehicle(GetEntityCoords(cache.ped))
+    local closestVehicle = cache.vehicle or GetClosestVehicle(GetEntityCoords(cache.ped))
     if closestVehicle ~= 0 then
         if closestVehicle ~= cache.vehicle then
             local plate = GetPlate(closestVehicle)
@@ -270,7 +270,7 @@ RegisterNetEvent('radialmenu:flipVehicle', function()
         disableMouse = false,
         disableCombat = true,
     }, {}, {}, {}, function() -- Done
-        local vehicle, distance = exports.qbx_core:GetClosestVehicle(GetEntityCoords(cache.ped))
+        local vehicle, distance = GetClosestVehicle(GetEntityCoords(cache.ped))
         if distance <= 15 then
             SetVehicleOnGroundProperly(vehicle)
         end
@@ -295,7 +295,7 @@ end)
 
 -- Sets the metadata when the player spawns
 AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
-    PlayerData = GetPlayerData()
+    PlayerData = QBX.PlayerData
     SetupRadialMenu()
 end)
 
