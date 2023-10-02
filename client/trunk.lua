@@ -70,7 +70,7 @@ RegisterNetEvent('qb-trunk:client:KidnapTrunk', function()
     local closestPlayer, distance = GetClosestPlayer()
     if distance ~= -1 and distance < 2 then
         if isKidnapping then
-            local closestVehicle, _ = GetClosestVehicle()
+            local closestVehicle, _ = GetClosestVehicle(GetEntityCoords(cache.ped))
             if closestVehicle ~= 0 then
                 TriggerEvent('police:client:KidnapPlayer')
                 TriggerServerEvent("police:server:CuffPlayer", GetPlayerServerId(closestPlayer), false)
@@ -143,7 +143,7 @@ RegisterNetEvent('qb-trunk:client:KidnapGetIn', function(veh)
 end)
 
 RegisterNetEvent('qb-trunk:client:GetIn', function()
-    local closestVehicle = GetClosestVehicle()
+    local closestVehicle = GetClosestVehicle(GetEntityCoords(cache.ped))
     if closestVehicle ~= 0 then
         local vehClass = GetVehicleClass(closestVehicle)
         local plate = GetPlate(closestVehicle)
