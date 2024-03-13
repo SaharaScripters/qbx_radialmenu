@@ -2,7 +2,7 @@ local config = require 'config.client'
 local inTrunk = false
 local isKidnapped = false
 local isKidnapping = false
-local cam = nil
+local cam = 0
 local disabledTrunk = {
     [`penetrator`] = "penetrator",
     [`vacca`] = "vacca",
@@ -46,19 +46,33 @@ local function TrunkCam(bool)
     local vehHeading = GetEntityHeading(vehicle)
     if bool then
         RenderScriptCams(false, false, 0, true, false)
-        DestroyCam(cam, false)
-        if not DoesCamExist(cam) then
-            cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
-            SetCamActive(cam, true)
-            SetCamCoord(cam, drawPos.x, drawPos.y, drawPos.z + 2)
-            SetCamRot(cam, -2.5, 0.0, vehHeading, 0.0)
-            RenderScriptCams(true, false, 0, true, true)
+        if DoesCamExist(cam) then
+            DestroyCam(cam, false)
+            cam = 0
         end
+
+        cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+        SetCamActive(cam, true)
+        SetCamCoord(cam, drawPos.x, drawPos.y, drawPos.z + 2)
+        SetCamRot(cam, -2.5, 0.0, vehHeading, 0.0)
+        RenderScriptCams(true, false, 0, true, true)
     else
         RenderScriptCams(false, false, 0, true, false)
-        DestroyCam(cam, false)
-        cam = nil
+        if DoesCamExist(cam) then
+            DestroyCam(cam, false)
+            cam = 0
+        end
     end
+end
+
+local function getClosestPlayer(distance)
+    local coords = GetEntityCoords(cache.ped)
+    local player, playerPed = lib.getClosestPlayer(coords, (distance or 2.5))
+    if not player then
+        exports.qbx_core:Notify(locale('error.no_people_nearby'), 'error')
+        return
+    end
+    return player, playerPed
 end
 
 -- Events
@@ -68,26 +82,22 @@ RegisterNetEvent('qb-kidnapping:client:SetKidnapping', function(bool)
 end)
 
 RegisterNetEvent('qb-trunk:client:KidnapTrunk', function()
-    local closestPlayer, distance = GetClosestPlayer()
-    if distance ~= -1 and distance < 2 then
-        if isKidnapping then
-            local closestVehicle, _ = GetClosestVehicle(GetEntityCoords(cache.ped))
-            if closestVehicle ~= 0 then
-                TriggerEvent('police:client:KidnapPlayer')
-                TriggerServerEvent("police:server:CuffPlayer", GetPlayerServerId(closestPlayer), false)
-                Wait(50)
-                TriggerServerEvent("qb-trunk:server:KidnapTrunk", GetPlayerServerId(closestPlayer), closestVehicle)
-            end
-        else
-            exports.qbx_core:Notify(Lang:t("error.not_kidnapped"), 'error')
-        end
-    end
+    local closestPlayer = getClosestPlayer()
+    if not closestPlayer then return end
+
+    local closestVehicle = lib.getClosestVehicle(GetEntityCoords(cache.ped))
+    if not isKidnapping or not closestVehicle then return exports.qbx_core:Notify(locale("error.not_kidnapped"), 'error') end
+
+    TriggerEvent('police:client:KidnapPlayer')
+    TriggerServerEvent("police:server:CuffPlayer", GetPlayerServerId(closestPlayer), false)
+    Wait(50)
+    TriggerServerEvent("qb-trunk:server:KidnapTrunk", GetPlayerServerId(closestPlayer), closestVehicle)
 end)
 
 RegisterNetEvent('qb-trunk:client:KidnapGetIn', function(veh)
     local closestVehicle = veh
     local vehClass = GetVehicleClass(closestVehicle)
-    local plate = GetPlate(closestVehicle)
+    local plate = qbx.getVehiclePlate(closestVehicle)
     if config.trunkClasses[vehClass].allowed then
         local isBusy = lib.callback.await('qb-trunk:server:getTrunkBusy', false, plate)
         if not disabledTrunk[GetEntityModel(closestVehicle)] then
@@ -107,15 +117,15 @@ RegisterNetEvent('qb-trunk:client:KidnapGetIn', function(veh)
                             inTrunk = true
                             Wait(500)
                             SetVehicleDoorShut(closestVehicle, 5, false)
-                            exports.qbx_core:Notify(Lang:t("success.entered_trunk"), 'success', 4000)
+                            exports.qbx_core:Notify(locale("success.entered_trunk"), 'success', 4000)
                             TrunkCam(true)
                             isKidnapped = true
                         else
-                            exports.qbx_core:Notify(Lang:t("error.trunk_closed"), 'error', 2500)
+                            exports.qbx_core:Notify(locale("error.trunk_closed"), 'error', 2500)
                         end
                     else
                         local vehicle = GetEntityAttachedTo(cache.ped)
-                        plate = GetPlate(vehicle)
+                        plate = qbx.getVehiclePlate(vehicle)
                         if GetVehicleDoorAngleRatio(vehicle, 5) > 0 then
                             local vehCoords = GetOffsetFromEntityInWorldCoords(vehicle, 0, -5.0, 0)
                             DetachEntity(cache.ped, true, true)
@@ -126,28 +136,29 @@ RegisterNetEvent('qb-trunk:client:KidnapGetIn', function(veh)
                             SetEntityCollision(cache.ped, true, true)
                             TrunkCam(false)
                         else
-                            exports.qbx_core:Notify(Lang:t("error.trunk_closed"), 'error', 2500)
+                            exports.qbx_core:Notify(locale("error.trunk_closed"), 'error', 2500)
                         end
                     end
                 else
-                    exports.qbx_core:Notify(Lang:t("error.someone_in_trunk"), 'error', 2500)
+                    exports.qbx_core:Notify(locale("error.someone_in_trunk"), 'error', 2500)
                 end
             else
-                exports.qbx_core:Notify(Lang:t("error.already_in_trunk"), 'error', 2500)
+                exports.qbx_core:Notify(locale("error.already_in_trunk"), 'error', 2500)
             end
         else
-            exports.qbx_core:Notify(Lang:t("error.cant_enter_trunk"), 'error', 2500)
+            exports.qbx_core:Notify(locale("error.cant_enter_trunk"), 'error', 2500)
         end
     else
-        exports.qbx_core:Notify(Lang:t("error.cant_enter_trunk"), 'error', 2500)
+        exports.qbx_core:Notify(locale("error.cant_enter_trunk"), 'error', 2500)
     end
 end)
 
 RegisterNetEvent('qb-trunk:client:GetIn', function()
-    local closestVehicle = GetClosestVehicle(GetEntityCoords(cache.ped))
+    local coords = GetEntityCoords(cache.ped)
+    local closestVehicle = lib.getClosestVehicle(coords, 5.0, false)
     if closestVehicle ~= 0 then
         local vehClass = GetVehicleClass(closestVehicle)
-        local plate = GetPlate(closestVehicle)
+        local plate = qbx.getVehiclePlate(closestVehicle)
         if config.trunkClasses[vehClass].allowed then
             local isBusy = lib.callback.await('qb-trunk:server:getTrunkBusy', false, plate)
             if not disabledTrunk[GetEntityModel(closestVehicle)] then
@@ -166,25 +177,25 @@ RegisterNetEvent('qb-trunk:client:GetIn', function()
                             inTrunk = true
                             Wait(500)
                             SetVehicleDoorShut(closestVehicle, 5, false)
-                            exports.qbx_core:Notify(Lang:t("success.entered_trunk"), 'success', 4000)
+                            exports.qbx_core:Notify(locale("success.entered_trunk"), 'success', 4000)
                             TrunkCam(true)
                         else
-                            exports.qbx_core:Notify(Lang:t("error.trunk_closed"), 'error', 2500)
+                            exports.qbx_core:Notify(locale("error.trunk_closed"), 'error', 2500)
                         end
                     else
-                        exports.qbx_core:Notify(Lang:t("error.someone_in_trunk"), 'error', 2500)
+                        exports.qbx_core:Notify(locale("error.someone_in_trunk"), 'error', 2500)
                     end
                 else
-                    exports.qbx_core:Notify(Lang:t("error.already_in_trunk"), 'error', 2500)
+                    exports.qbx_core:Notify(locale("error.already_in_trunk"), 'error', 2500)
                 end
             else
-                exports.qbx_core:Notify(Lang:t("error.cant_enter_trunk"), 'error', 2500)
+                exports.qbx_core:Notify(locale("error.cant_enter_trunk"), 'error', 2500)
             end
         else
-            exports.qbx_core:Notify(Lang:t("error.cant_enter_trunk"), 'error', 2500)
+            exports.qbx_core:Notify(locale("error.cant_enter_trunk"), 'error', 2500)
         end
     else
-        exports.qbx_core:Notify(Lang:t("error.no_vehicle_found"), 'error', 2500)
+        exports.qbx_core:Notify(locale("error.no_vehicle_found"), 'error', 2500)
     end
 end)
 
@@ -196,7 +207,7 @@ CreateThread(function()
         local vehicle = GetEntityAttachedTo(cache.ped)
         local drawPos = GetOffsetFromEntityInWorldCoords(vehicle, 0, -5.5, 0)
         local vehHeading = GetEntityHeading(vehicle)
-        if cam then
+        if DoesCamExist(cam) then
             sleep = 0
             SetCamRot(cam, -2.5, 0.0, vehHeading, 0.0)
             SetCamCoord(cam, drawPos.x, drawPos.y, drawPos.z + 2)
@@ -212,10 +223,11 @@ CreateThread(function()
             if not isKidnapped then
                 local vehicle = GetEntityAttachedTo(cache.ped)
                 local drawPos = GetOffsetFromEntityInWorldCoords(vehicle, 0, -2.5, 0)
-                local plate = GetPlate(vehicle)
+                local plate = qbx.getVehiclePlate(vehicle)
                 if DoesEntityExist(vehicle) then
                     sleep = 0
-                    DrawText3Ds(drawPos.x, drawPos.y, drawPos.z + 0.75, Lang:t("general.get_out_trunk_button"))
+                    DrawText3Ds(drawPos.x, drawPos.y, drawPos.z + 0.75, locale("general.get_out_trunk_button"))
+
                     if IsControlJustPressed(0, 38) then
                         if GetVehicleDoorAngleRatio(vehicle, 5) > 0 then
                             local vehCoords = GetOffsetFromEntityInWorldCoords(vehicle, 0, -5.0, 0)
@@ -227,12 +239,12 @@ CreateThread(function()
                             SetEntityCollision(cache.ped, true, true)
                             TrunkCam(false)
                         else
-                            exports.qbx_core:Notify(Lang:t("error.trunk_closed"), 'error', 2500)
+                            exports.qbx_core:Notify(locale("error.trunk_closed"), 'error', 2500)
                         end
                         Wait(100)
                     end
                     if GetVehicleDoorAngleRatio(vehicle, 5) > 0 then
-                        DrawText3Ds(drawPos.x, drawPos.y, drawPos.z + 0.5, Lang:t("general.close_trunk_button"))
+                        DrawText3Ds(drawPos.x, drawPos.y, drawPos.z + 0.5, locale("general.close_trunk_button"))
                         if IsControlJustPressed(0, 47) then
                             if not IsVehicleSeatFree(vehicle, -1) then
                                 TriggerServerEvent('qb-radialmenu:trunk:server:Door', false, plate, 5)
@@ -242,7 +254,7 @@ CreateThread(function()
                             Wait(100)
                         end
                     else
-                        DrawText3Ds(drawPos.x, drawPos.y, drawPos.z + 0.5, Lang:t("general.open_trunk_button"))
+                        DrawText3Ds(drawPos.x, drawPos.y, drawPos.z + 0.5, locale("general.open_trunk_button"))
                         if IsControlJustPressed(0, 47) then
                             if not IsVehicleSeatFree(vehicle, -1) then
                                 TriggerServerEvent('qb-radialmenu:trunk:server:Door', true, plate, 5)
