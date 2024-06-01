@@ -133,18 +133,17 @@ local function setupRadialMenu()
 
     if config.gangItems[QBX.PlayerData.gang.name] then
         lib.addRadialItem(convert({
-            id = 'ganginteractions',
+            id = 'gangInteractions',
             label = locale('general.gang_radial'),
             icon = 'skull-crossbones',
             items = config.gangItems[QBX.PlayerData.gang.name]
         }))
     end
 
-    if not QBX.PlayerData.job.onduty then return end
-    if not config.jobItems[QBX.PlayerData.job.name] then return end
+    if not config.jobItems[QBX.PlayerData.job.name] or not QBX.PlayerData.job.onduty then return end
 
     lib.addRadialItem(convert({
-        id = 'jobinteractions',
+        id = 'jobInteractions',
         label = locale('general.job_radial'),
         icon = 'briefcase',
         items = config.jobItems[QBX.PlayerData.job.name]
@@ -285,7 +284,7 @@ RegisterNetEvent('radialmenu:flipVehicle', function()
     if not vehicle then return exports.qbx_core:Notify(locale('error.no_vehicle_nearby'), 'error') end
     if lib.progressBar({
         label = locale('progress.flipping_car'),
-        duration = config.fliptime,
+        duration = config.flipTime,
         useWhileDead = false,
         canCancel = true,
         disable = {
@@ -325,10 +324,10 @@ AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
 end)
 
 RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
-    lib.removeRadialItem('jobinteractions')
+    lib.removeRadialItem('jobInteractions')
     if job.onduty and config.jobItems[job.name] then
         lib.addRadialItem(convert({
-            id = 'jobinteractions',
+            id = 'jobInteractions',
             label = locale('general.job_radial'),
             icon = 'briefcase',
             items = config.jobItems[job.name]
