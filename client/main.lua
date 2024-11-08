@@ -44,7 +44,7 @@ local function convert(tbl)
         onSelect = tbl.onSelect or function()
             if action then action() end
         end,
-        keepOpen = not tbl.keepOpen or false
+        keepOpen = tbl.keepOpen
     }
 end
 
@@ -155,7 +155,7 @@ local function isPolice()
 end
 
 local function isEMS()
-    return QBX.PlayerData.job.type == 'medic' and QBX.PlayerData.job.onduty
+    return QBX.PlayerData.job.type == 'ems' and QBX.PlayerData.job.onduty
 end
 
 -- Events
@@ -262,10 +262,10 @@ RegisterNetEvent('radialmenu:client:setExtra', function(id)
             SetVehicleAutoRepairDisabled(cache.vehicle, true) -- Forces Auto Repair off when Toggling Extra [GTA 5 Niche Issue]
             if DoesExtraExist(cache.vehicle, extra) then
                 if IsVehicleExtraTurnedOn(cache.vehicle, extra) then
-                    qbx.setVehicleExtra(cache.vehicle, extra, true)
+                    qbx.setVehicleExtra(cache.vehicle, extra, false)
                     exports.qbx_core:Notify(locale('error.extra_deactivated', extra), 'error', 2500)
                 else
-                    qbx.setVehicleExtra(cache.vehicle, extra, false)
+                    qbx.setVehicleExtra(cache.vehicle, extra, true)
                     exports.qbx_core:Notify(locale('success.extra_activated', extra), 'success', 2500)
                 end
             else
@@ -325,14 +325,7 @@ end)
 
 RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
     lib.removeRadialItem('jobInteractions')
-    if job.onduty and config.jobItems[job.name] then
-        lib.addRadialItem(convert({
-            id = 'jobInteractions',
-            label = locale('general.job_radial'),
-            icon = 'briefcase',
-            items = config.jobItems[job.name]
-        }))
-    end
+    setupRadialMenu()
 end)
 
 RegisterNetEvent('QBCore:Client:SetDuty', function(onDuty)
@@ -359,6 +352,12 @@ RegisterNetEvent('QBCore:Client:OnGangUpdate', function(gang)
     end
 end)
 
+local function createQBExport(name, cb)
+    AddEventHandler(('__cfx_export_qb-radialmenu_%s'):format(name), function(setCB)
+        setCB(cb)
+    end)
+end
+
 local function addOption(data, id)
     data.id = data.id or id and id
     lib.addRadialItem(convert(data))
@@ -366,9 +365,11 @@ local function addOption(data, id)
 end
 
 exports('AddOption', addOption)
+createQBExport('AddOption', addOption)
 
 local function removeOption(id)
     lib.removeRadialItem(id)
 end
 
 exports('RemoveOption', removeOption)
+createQBExport('RemoveOption', removeOption)

@@ -770,10 +770,8 @@ LastEquipped = {}
 Cooldown = false
 
 local function PlayToggleEmote(e, cb)
-	lib.requestAnimDict(e.Dict, 1500)
 	if cache.vehicle then e.Move = 51 end
-	TaskPlayAnim(cache.ped, e.Dict, e.Anim, 3.0, 3.0, e.Dur, e.Move, 0, false, false, false)
-	RemoveAnimDict(e.Dict)
+	lib.playAnim(cache.ped, e.Dict, e.Anim, 3.0, 3.0, e.Dur, e.Move, 0, false, false, false)
 	local Pause = e.Dur - 500
 	Pause = Pause < 500 and 500 or Pause
 	IncurCooldown(Pause)
